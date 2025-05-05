@@ -1,0 +1,16 @@
+lightweight-charts
+backtrader 
+Backtesting 
+ccxt 
+requests 
+pandas 
+yfinance 
+scikit-learn 
+numpy 
+matplotlib
+pandas-ta
+termcolor
+websockets
+yahooquery
+psycopg2
+ib_insync
