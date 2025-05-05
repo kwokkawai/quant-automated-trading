@@ -4,3 +4,4 @@ backup/
 .env
 *.db
 *.log
+.git*
