@@ -1,7 +1,6 @@
-
 # Quant Automated Trading Project
 
-This project is a comprehensive framework for **quantitative automated trading** using Python. It integrates data collection, backtesting, order execution, and portfolio tracking, with a focus on automation and extensibility. My target is to automate ALL my investment strategy only based on the Quant Automated Trading
+This project is a comprehensive Python framework for **quantitative automated trading**. It integrates data collection, backtesting, order execution, and portfolio tracking, with a focus on automation and extensibility. The goal is to automate all investment strategies using a robust, database-driven workflow.
 
 ## Project Structure
 
@@ -16,7 +15,6 @@ This project is a comprehensive framework for **quantitative automated trading**
 ### 2. **Order Execution**
 - **myStockOrder.py**  
   Monitors pending orders in a PostgreSQL table, checks market prices, and places orders via the Interactive Brokers (IBKR) API when conditions are met. Supports both live and paper trading, and updates order status in the database.
-
 - **myIBKRpendingOrder.py**  
   Retrieves and displays all pending (open) orders from IBKR using the API, useful for monitoring and reconciliation.
 
@@ -59,6 +57,7 @@ This project is a comprehensive framework for **quantitative automated trading**
 - [ibapi](https://interactivebrokers.github.io/)
 - [psycopg2](https://www.psycopg.org/)
 - [yahooquery](https://github.com/dpguthrie/yahooquery)
+- [yfinance](https://github.com/ranaroussi/yfinance)
 - [termcolor](https://pypi.org/project/termcolor/)
 - PostgreSQL
 
