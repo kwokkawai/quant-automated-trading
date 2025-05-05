@@ -9,6 +9,7 @@ import threading
 import csv
 from termcolor import cprint
 from yahooquery import Screener
+import time
 
 import psycopg2
 
@@ -149,69 +150,76 @@ def save_backtest_stats_to_db(stats, ticker_code, strategy_class, start_date, en
     cursor.close()
     conn.close()
 
-# Read input from a CSV file and create threads dynamically
-threads = []
-# Use Yahoo Finance screener to fetch US stocks
-s = Screener()
-data = s.get_screeners('most_actives', count=200)  # Fetch most active US stocks
-stocks = data['most_actives']['quotes']
-# Before starting your batch of backtests:
-db_params = {
-    'host': DB_HOST,
-    'database': DB_NAME,
-    'user': DB_USER,
-    'password': DB_PASSWORD
-}
-batch_id = get_next_batch_id(db_params)
+if __name__ == "__main__":
 
-for stock in stocks:
-    #print(stock['symbol'])
-    ticker_code = stock['symbol']
-    start_date = datetime.datetime.strptime('2023-01-01', '%Y-%m-%d')
-    end_date = datetime.datetime.now().date()
-    doPlot = 0
+    while True:
 
-    # Create a thread for each row in the input file for 1 strategy
-    # strategy_class = strategy_classes['BollingerBandsStrategy']
-    # thread = threading.Thread(target=run_backtest, args=(ticker_code, start_date, end_date, strategy_class, doPlot,batch_id))
-    # threads.append(thread)
 
-    # Loop through all strategies
-    for strategy_class in strategy_classes.values():
-        thread = threading.Thread(
-            target=run_backtest,
-            args=(ticker_code, start_date, end_date, strategy_class, doPlot, batch_id)
-        )
-        threads.append(thread)
+        # Read input from a CSV file and create threads dynamically
+        threads = []
+        # Use Yahoo Finance screener to fetch US stocks
+        s = Screener()
+        data = s.get_screeners('most_actives', count=200)  # Fetch most active US stocks
+        stocks = data['most_actives']['quotes']
+        # Before starting your batch of backtests:
+        db_params = {
+            'host': DB_HOST,
+            'database': DB_NAME,
+            'user': DB_USER,
+            'password': DB_PASSWORD
+        }
+        batch_id = get_next_batch_id(db_params)
 
-with open('/Users/pkwok/Projects/20. Algo/stock/myModels.csv', 'r') as file:
-    reader = csv.DictReader(file)
-    for row in reader:
-        ticker_code = row['ticker_code']
-        start_date = datetime.datetime.strptime(row['start_date'], '%Y-%m-%d')
-        if row['end_date'] == 'now':
+        for stock in stocks:
+            #print(stock['symbol'])
+            ticker_code = stock['symbol']
+            start_date = datetime.datetime.strptime('2023-01-01', '%Y-%m-%d')
             end_date = datetime.datetime.now().date()
-        else:
-            end_date = datetime.datetime.strptime(row['end_date'], '%Y-%m-%d')
-        strategy_class = strategy_classes[row['strategy_class']]
-        doPlot = int(row['doPlot'])
-        
-        # Create a thread for each row in the input file for 1 strategy
-        # thread = threading.Thread(target=run_backtest, args=(ticker_code, start_date, end_date, strategy_class, doPlot,batch_id))
-        # threads.append(thread)
+            doPlot = 0
 
-        # Loop through all strategies
-        for strategy_class in strategy_classes.values():
-            thread = threading.Thread(
-                target=run_backtest,
-                args=(ticker_code, start_date, end_date, strategy_class, doPlot, batch_id)
-            )
-            threads.append(thread)
+            # Create a thread for each row in the input file for 1 strategy
+            # strategy_class = strategy_classes['BollingerBandsStrategy']
+            # thread = threading.Thread(target=run_backtest, args=(ticker_code, start_date, end_date, strategy_class, doPlot,batch_id))
+            # threads.append(thread)
 
-# Start all threads
-for thread in threads:
-    thread.start()
+            # Loop through all strategies
+            for strategy_class in strategy_classes.values():
+                thread = threading.Thread(
+                    target=run_backtest,
+                    args=(ticker_code, start_date, end_date, strategy_class, doPlot, batch_id)
+                )
+                threads.append(thread)
 
-# Wait for all threads to complete
-for thread in threads:
-    thread.join()
+        with open('/Users/pkwok/Projects/20. Algo/stock/myModels.csv', 'r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                ticker_code = row['ticker_code']
+                start_date = datetime.datetime.strptime(row['start_date'], '%Y-%m-%d')
+                if row['end_date'] == 'now':
+                    end_date = datetime.datetime.now().date()
+                else:
+                    end_date = datetime.datetime.strptime(row['end_date'], '%Y-%m-%d')
+                strategy_class = strategy_classes[row['strategy_class']]
+                doPlot = int(row['doPlot'])
+                
+                # Create a thread for each row in the input file for 1 strategy
+                # thread = threading.Thread(target=run_backtest, args=(ticker_code, start_date, end_date, strategy_class, doPlot,batch_id))
+                # threads.append(thread)
+
+                # Loop through all strategies
+                for strategy_class in strategy_classes.values():
+                    thread = threading.Thread(
+                        target=run_backtest,
+                        args=(ticker_code, start_date, end_date, strategy_class, doPlot, batch_id)
+                    )
+                    threads.append(thread)
+
+        # Start all threads
+        for thread in threads:
+            thread.start()
+
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join()
+        print("Running Backtest at", datetime.datetime.now().date())
+        time.sleep(60*60*24)  # Check every 1 Day

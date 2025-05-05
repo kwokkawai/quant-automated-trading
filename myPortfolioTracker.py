@@ -8,8 +8,9 @@ from ibapi.client import EClient
 from ibapi.wrapper import EWrapper
 from ibapi.contract import Contract
 from threading import Thread
+from ib_insync import *
 
-# PostgreSQL connection details
+# PostgreSQL onnection details
 DB_HOST = "localhost"
 DB_NAME = "postgres"
 DB_USER = "postgres"
@@ -49,16 +50,25 @@ class IBKRPortfolioClient(EWrapper, EClient):
         self._thread = Thread(target=self.run)
         self._thread.start()
 
+    def nextValidId(self, orderId):
+        self.connected = True
+
     def position(self, account, contract, position, avgCost):
-        # Only track stocks
-        if contract.secType == "STK":
-            self.positions.append({
-                "symbol": contract.symbol,
-                "quantity": position,
-                "avg_cost": avgCost
-            })
+        # Track all instrument types, not just stocks
+        # print("test")
+        # print("Position.", "Account:", account, "Contract:", contract, "Position:", position, "Avg cost:", avgCost)
+        print(f"Received position: account={account}, symbol={contract.symbol}, secType={contract.secType}, position={position}, avgCost={avgCost}")
+        self.positions.append({
+            "symbol": contract.symbol,
+            "secType": contract.secType,
+            "exchange": contract.exchange,
+            "currency": contract.currency,
+            "position": position,
+            "avg_cost": avgCost
+        })
 
     def positionEnd(self):
+        print("All positions received from IBKR.")
         self.disconnect()
 
     def error(self, reqId, errorCode, errorString, advancedOrderRejectJson=None):
@@ -68,10 +78,25 @@ def sync_ibkr_portfolio_to_local(tracker):
     # Retrieve portfolio from IBKR
     ibkr_client = IBKRPortfolioClient()
     ibkr_client.connect(DEFAULT_HOST, TRADING_PORT, DEFAULT_CLIENT_ID)
+
+    # Wait for connection
+    timeout = 10
+    waited = 0
+    while not ibkr_client.isConnected and waited < timeout:
+        time.sleep(0.1)
+        waited += 0.1
+    if not ibkr_client.isConnected:
+        print("Could not connect to IBKR API.")
+        return
+
     ibkr_client.reqPositions()
-    # Wait a bit to ensure data is received
     time.sleep(2)
     ibkr_client._thread.join()
+    
+    # ibkr_client.reqPositionsMulti(2, "DU7562575", "")   
+    # Wait a bit to ensure data is received
+    # time.sleep(1)
+    # ibkr_client._thread.start()
 
     print("Positions received from IBKR:", ibkr_client.positions)
 
@@ -177,19 +202,55 @@ class PortfolioTracker:
         self.cursor.close()
         self.conn.close()
 
+def getPosition():
+    ib = IB()
+
+    ib.connect(DEFAULT_HOST, TRADING_PORT, clientId=DEFAULT_CLIENT_ID+1)
+    position_list = ib.positions()
+    #print(position_list)
+    for position in position_list:
+        print(f"Account: {position.account}, Symbol: {position.contract.symbol}, Currency: {position.contract.currency}, position: {position.position}, avgCost: {position.avgCost}")
+        symbol = position.contract.symbol
+        quantity = int(position.position)
+        avg_cost = float(position.avgCost)
+
+        # Check if the symbol already exists
+        tracker.cursor.execute("SELECT id FROM public.portfolio WHERE symbol = %s", (symbol,))
+        result = tracker.cursor.fetchone()
+        if result:
+            # Update existing record
+            tracker.cursor.execute(
+                "UPDATE public.portfolio SET quantity = %s, purchase_price = %s WHERE symbol = %s",
+                (quantity, avg_cost, symbol)
+            )
+        else:
+            # Insert new record
+            tracker.cursor.execute(
+                "INSERT INTO public.portfolio (symbol, quantity, purchase_price) VALUES (%s, %s, %s)",
+                (symbol, quantity, avg_cost)
+            )
+        tracker.conn.commit()
+
+
 if __name__ == "__main__":
-    # Initialize the portfolio tracker
-    tracker = PortfolioTracker()
+
+    while True:
+    #Initialize the portfolio tracker
+        tracker = PortfolioTracker()
+        getPosition()
+        # Fetch current prices and update the database
+        tracker.fetch_prices() 
+        time.sleep(600)
 
     # Example usage
     #tracker.add_stock("AAPL", 10, 150)  # Add 10 shares of AAPL purchased at $150 each
     #tracker.add_stock("MSFT", 5, 300)  # Add 5 shares of MSFT purchased at $300 each
-    while True:
-        # Sync portfolio from IBKR to local DB
-        sync_ibkr_portfolio_to_local(tracker)
+    # while True:
+    #     # Sync portfolio from IBKR to local DB
+    #     sync_ibkr_portfolio_to_local(tracker)
 
-        # Fetch current prices and update the database
-        tracker.fetch_prices() 
-        time.sleep(600)
+    #     # Fetch current prices and update the database
+    #     tracker.fetch_prices() 
+    #     time.sleep(600)
 
     #tracker.display_portfolio()  # Display the portfolio

@@ -5,7 +5,7 @@ from ibapi.contract import Contract
 from threading import Thread
 
 DEFAULT_HOST = '127.0.0.1'
-DEFAULT_CLIENT_ID = 3
+DEFAULT_CLIENT_ID = 10
 
 LIVE_TRADING_PORT = 7496
 PAPER_TRADING_PORT = 7497
