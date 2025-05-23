@@ -14,3 +14,5 @@ websockets
 yahooquery
 psycopg2
 ib_insync
+protobuf>=5.29.0,<6
+futu-api

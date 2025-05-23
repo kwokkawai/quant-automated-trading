@@ -205,7 +205,7 @@ class PortfolioTracker:
 def getPosition():
     ib = IB()
 
-    ib.connect(DEFAULT_HOST, TRADING_PORT, clientId=DEFAULT_CLIENT_ID+1)
+    ib.connect(DEFAULT_HOST, TRADING_PORT, clientId=DEFAULT_CLIENT_ID)
     position_list = ib.positions()
     #print(position_list)
     for position in position_list:

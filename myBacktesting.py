@@ -154,13 +154,6 @@ if __name__ == "__main__":
 
     while True:
 
-
-        # Read input from a CSV file and create threads dynamically
-        threads = []
-        # Use Yahoo Finance screener to fetch US stocks
-        s = Screener()
-        data = s.get_screeners('most_actives', count=200)  # Fetch most active US stocks
-        stocks = data['most_actives']['quotes']
         # Before starting your batch of backtests:
         db_params = {
             'host': DB_HOST,
@@ -169,6 +162,18 @@ if __name__ == "__main__":
             'password': DB_PASSWORD
         }
         batch_id = get_next_batch_id(db_params)
+
+        # # Read input from a CSV file and create threads dynamically
+        threads = []
+        # Use Yahoo Finance screener to fetch US stocks
+        s = Screener()
+        try:
+            data = s.get_screeners('most_actives', count=200)
+        except Exception as e:
+            print("Yahoo screener fetch failed:", e)
+            data = {'most_actives': {'quotes': []}}
+        
+        stocks = data['most_actives']['quotes']
 
         for stock in stocks:
             #print(stock['symbol'])
