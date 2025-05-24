@@ -12,7 +12,7 @@ pandas-ta
 termcolor
 websockets
 yahooquery
-psycopg2
+psycopg2-binary
 ib_insync
 protobuf>=5.29.0,<6
 futu-api
