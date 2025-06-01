@@ -1,28 +1,35 @@
-## This program is to run backtesting on multiple strategies and multiple stocks from a CSV file and 200 top US stocks from Yahoo Finance screener
+## This program is to run backtestiiiiing on multiple strategies and multiple stocks from a CSV file and 200 top US stocks from Yahoo Finance screener
 ## Result will be saved to PostgreSQL database
 
 import datetime
 import yfinance as yf
 from backtesting import Backtest
-from myStrategies import ADXStrategy, BollingerBandsStrategy  # Import strategies
+from myStrategies import ADXStrategy, BollingerBandsStrategy, Stochrsi  # Import strategies
 import threading
 import csv
 from termcolor import cprint
 from yahooquery import Screener
 import time
-
+import dontshare
 import psycopg2
 
 # PostgreSQL connection details
-DB_HOST = "localhost"
-DB_NAME = "postgres"
-DB_USER = "postgres"
-DB_PASSWORD = "changeme"
+DB_HOST = dontshare.DB_HOST 
+DB_NAME = dontshare.DB_NAME
+DB_USER = dontshare.DB_USER
+DB_PASSWORD = dontshare.DB_PASSWORD
+
+# PostgreSQL connection details
+DB_HOST2 = dontshare.DB_HOST2 
+DB_NAME2 = dontshare.DB_NAME2
+DB_USER2 = dontshare.DB_USER2
+DB_PASSWORD2 = dontshare.DB_PASSWORD2
 
 # Map strategy class names to actual classes
 strategy_classes = {
     "ADXStrategy": ADXStrategy,
-    "BollingerBandsStrategy": BollingerBandsStrategy
+    "BollingerBandsStrategy": BollingerBandsStrategy,
+    "Stochrsi": Stochrsi,
 }
 
 def get_data(ticker_code, start_date, end_date):
@@ -47,6 +54,7 @@ def get_next_batch_id(db_params):
 
 
 def run_backtest(ticker_code,start_date,end_date, strategy_class, doPlot,batch_id):
+
     bt = Backtest(get_data(ticker_code,start_date,end_date), strategy_class, cash=1000000, commission=.002)
     #bt = Backtest(get_data(ticker_code), ADXStrategy , cash=1000000, commission=.002, margin=1.0)
     try:
@@ -150,6 +158,20 @@ def save_backtest_stats_to_db(stats, ticker_code, strategy_class, start_date, en
     cursor.close()
     conn.close()
 
+def read_most_actives(db_params):
+    conn = psycopg2.connect(**db_params)
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT symbol, shortname, regularMarketPrice, regularMarketChange, regularMarketChangePercent, regularMarketVolume, marketCap
+        FROM most_actives
+    """)
+    rows = cur.fetchall()
+    columns = [desc[0] for desc in cur.description]
+    result = [dict(zip(columns, row)) for row in rows]
+    cur.close()
+    conn.close()
+    return result
+
 if __name__ == "__main__":
 
     while True:
@@ -166,14 +188,20 @@ if __name__ == "__main__":
         # # Read input from a CSV file and create threads dynamically
         threads = []
         # Use Yahoo Finance screener to fetch US stocks
-        s = Screener()
-        try:
-            data = s.get_screeners('most_actives', count=200)
-        except Exception as e:
-            print("Yahoo screener fetch failed:", e)
-            data = {'most_actives': {'quotes': []}}
-        
-        stocks = data['most_actives']['quotes']
+        # s = Screener()
+        # try:
+        #     data = s.get_screeners('most_actives', count=200)
+        # except Exception as e:
+        #     print("Yahoo screener fetch failed:", e)
+        #     data = {'most_actives': {'quotes': []}}
+
+        db_params = {
+            'host': DB_HOST2,
+            'database': DB_NAME2,
+            'user': DB_USER2,
+            'password': DB_PASSWORD2
+        }
+        stocks = read_most_actives(db_params)
 
         for stock in stocks:
             #print(stock['symbol'])

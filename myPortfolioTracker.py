@@ -14,7 +14,7 @@ from ib_insync import *
 DB_HOST = "localhost"
 DB_NAME = "postgres"
 DB_USER = "postgres"
-DB_PASSWORD = "changeme"
+DB_PASSWORD = "GW123456"
 
 DEFAULT_HOST = '127.0.0.1'
 DEFAULT_CLIENT_ID = 2

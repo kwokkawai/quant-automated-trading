@@ -2,6 +2,19 @@ import datetime
 import yfinance as yf
 from yahooquery import Screener
 import psycopg2
+import dontshare
+
+# PostgreSQL connection details
+DB_HOST = dontshare.DB_HOST 
+DB_NAME = dontshare.DB_NAME
+DB_USER = dontshare.DB_USER
+DB_PASSWORD = dontshare.DB_PASSWORD
+
+# PostgreSQL connection details
+DB_HOST2 = dontshare.DB_HOST2 
+DB_NAME2 = dontshare.DB_NAME2
+DB_USER2 = dontshare.DB_USER2
+DB_PASSWORD2 = dontshare.DB_PASSWORD2
 
 def get_data(ticker_code, start_date, end_date):
 
@@ -27,7 +40,7 @@ def save_to_postgres(stocks, db_params):
     cur.execute("""
         CREATE TABLE IF NOT EXISTS most_actives (
             symbol TEXT PRIMARY KEY,
-            shortname TEXT,
+            shortName TEXT,
             regularMarketPrice FLOAT,
             regularMarketChange FLOAT,
             regularMarketChangePercent FLOAT,
@@ -35,12 +48,14 @@ def save_to_postgres(stocks, db_params):
             marketCap BIGINT
         )
     """)
+    # Truncate the table before inserting new data
+    cur.execute("TRUNCATE TABLE most_actives;")
     for stock in stocks:
         cur.execute("""
-            INSERT INTO most_actives (symbol, shortname, regularMarketPrice, regularMarketChange, regularMarketChangePercent, regularMarketVolume, marketCap)
+            INSERT INTO most_actives (symbol, shortName, regularMarketPrice, regularMarketChange, regularMarketChangePercent, regularMarketVolume, marketCap)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (symbol) DO UPDATE SET
-                shortname = EXCLUDED.shortname,
+                shortName = EXCLUDED.shortName,
                 regularMarketPrice = EXCLUDED.regularMarketPrice,
                 regularMarketChange = EXCLUDED.regularMarketChange,
                 regularMarketChangePercent = EXCLUDED.regularMarketChangePercent,
@@ -59,11 +74,11 @@ def save_to_postgres(stocks, db_params):
     cur.close()
     conn.close()
 
-def read_most_actives(db_params):
+def read_most_actives_from_db(db_params):
     conn = psycopg2.connect(**db_params)
     cur = conn.cursor()
     cur.execute("""
-        SELECT symbol, shortname, regularMarketPrice, regularMarketChange, regularMarketChangePercent, regularMarketVolume, marketCap
+        SELECT symbol, shortName, regularMarketPrice, regularMarketChange, regularMarketChangePercent, regularMarketVolume, marketCap
         FROM most_actives
     """)
     rows = cur.fetchall()
@@ -75,19 +90,49 @@ def read_most_actives(db_params):
 
 # Example usage: fill in your PostgreSQL connection parameters
 db_params = {
-    'host': 'localhost',
+    'host': DB_HOST2,
     'port': 5432,
-    'dbname': 'postgres',
-    'user': 'pkwok',
-    'password': 'GW123456'
+    'dbname': DB_NAME2,
+    'user': DB_USER2,
+    'password': DB_PASSWORD2,
 }
 
-# stocks = get_most_actives()
+# Get Most Active 200 Stocks
+# stocks = get_most_actives(200)
 
 # if stocks:
-#     save_to_postgres(stocks, db_params)
+#     stock = stocks[0]
+#     print("Stock Info:")
+#     for k, v in stock.items():
+#         print(f"{k:30}: {v}")
+# else:
+#     print("No data found.")
 
-stocks = read_most_actives(db_params)
+# save_to_postgres(stocks, db_params)
+
+# if stocks:
+#     print(
+#         stocks[0]['symbol'],
+#         stocks[0]['shortName'],
+#         stocks[0]['regularMarketPrice'],
+#         stocks[0]['regularMarketChange'],
+#         stocks[0]['regularMarketChangePercent'],
+#         stocks[0]['regularMarketVolume'],
+#         stocks[0]['marketCap']
+#     )
+# else:
+#     print("No data found.")
+
+
+stocks = read_most_actives_from_db(db_params)
+
+if stocks:
+    stock = stocks[0]
+    print("Stock Info:")
+    for k, v in stock.items():
+        print(f"{k:30}: {v}")
+else:
+    print("No data found.")
 
 if stocks:
     print(
@@ -101,4 +146,3 @@ if stocks:
     )
 else:
     print("No data found.")
-

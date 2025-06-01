@@ -50,3 +50,9 @@ venv.bak/
 
 # Sensitive files
 *.env
+
+# dontshare.py
+dontshare.py
+
+# backup
+*.bak

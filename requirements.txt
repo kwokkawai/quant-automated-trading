@@ -14,5 +14,8 @@ websockets
 yahooquery
 psycopg2-binary
 ib_insync
-protobuf>=5.29.0,<6
+ibapi
+protobuf
 futu-api
+ta
+TA-Lib
